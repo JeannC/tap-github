@@ -1763,25 +1763,17 @@ class StargazersGraphqlStream(GitHubGraphqlStream):
     ).to_dict()
 
 
-class StargazersGraphqlStream(GitHubGraphqlStream):
-    """Defines 'UserContributedToStream' stream. Warning: this stream 'only' gets the first 100 projects (by stars)."""  # noqa: E501
+class DiscussionsGraphqlStream(GitHubGraphqlStream):
+    """Defines stream fetching discussions from each repository."""  # noqa: E501
 
-    name = "stargazers"
-    query_jsonpath = "$.data.repository.stargazers.edges.[*]"
-    primary_keys: ClassVar[list[str]] = ["user_id", "repo_id"]
+    name = "discussions"
+    query_jsonpath = "$.data.repository.discussions.edges.[*]"
+    primary_keys: ClassVar[list[str]] = ["id", "repo_id"]
     replication_key = "starred_at"
     parent_stream_type = RepositoryStream
     state_partitioning_keys: ClassVar[list[str]] = ["repo_id"]
     # The parent repository object changes if the number of stargazers changes.
     ignore_parent_replication_key = False
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # TODO - remove warning with next release.
-        self.logger.warning(
-            "The stream 'stargazers' might conflict with previous implementation. "
-            "Looking for the older version? Use 'stargazers_rest'."
-        )
 
     def post_process(self, row: dict, context: dict | None = None) -> dict:
         """
@@ -1817,7 +1809,7 @@ class StargazersGraphqlStream(GitHubGraphqlStream):
             if len(results) == 0:
                 return None
             last = results[-1]
-            if parse(last["starred_at"]) < parse(since):
+            if parse(last["created_at"]) < parse(since):
                 return None
         return super().get_next_page_token(response, previous_token)
 
