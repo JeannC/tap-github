@@ -1763,6 +1763,109 @@ class StargazersGraphqlStream(GitHubGraphqlStream):
     ).to_dict()
 
 
+class StargazersGraphqlStream(GitHubGraphqlStream):
+    """Defines 'UserContributedToStream' stream. Warning: this stream 'only' gets the first 100 projects (by stars)."""  # noqa: E501
+
+    name = "stargazers"
+    query_jsonpath = "$.data.repository.stargazers.edges.[*]"
+    primary_keys: ClassVar[list[str]] = ["user_id", "repo_id"]
+    replication_key = "starred_at"
+    parent_stream_type = RepositoryStream
+    state_partitioning_keys: ClassVar[list[str]] = ["repo_id"]
+    # The parent repository object changes if the number of stargazers changes.
+    ignore_parent_replication_key = False
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # TODO - remove warning with next release.
+        self.logger.warning(
+            "The stream 'stargazers' might conflict with previous implementation. "
+            "Looking for the older version? Use 'stargazers_rest'."
+        )
+
+    def post_process(self, row: dict, context: dict | None = None) -> dict:
+        """
+        Add a user_id top-level field to be used as state replication key.
+        """
+        row = super().post_process(row, context)
+        row["user_id"] = row["user"]["id"]
+        return row
+
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: Any | None
+    ) -> Any | None:
+        """
+        Exit early if a since parameter is provided.
+        """
+        request_parameters = parse_qs(str(urlparse(response.request.url).query))
+
+        # parse_qs interprets "+" as a space, revert this to keep an aware datetime
+        try:
+            since = (
+                request_parameters["since"][0].replace(" ", "+")
+                if "since" in request_parameters
+                else ""
+            )
+        except IndexError:
+            since = ""
+
+        # If since parameter is present, try to exit early by looking at the last "starred_at".  # noqa: E501
+        # Noting that we are traversing in DESCENDING order by STARRED_AT.
+        if since:
+            results = list(extract_jsonpath(self.query_jsonpath, input=response.json()))
+            # If no results, return None to exit early.
+            if len(results) == 0:
+                return None
+            last = results[-1]
+            if parse(last["starred_at"]) < parse(since):
+                return None
+        return super().get_next_page_token(response, previous_token)
+
+    @property
+    def query(self) -> str:
+        """Return dynamic GraphQL query."""
+        # Graphql id is equivalent to REST node_id. To keep the tap consistent, we rename "id" to "node_id".  # noqa: E501
+        return """
+          query repositoryStargazers($repo: String! $org: String! $nextPageCursor_0: String) {
+            repository(name: $repo owner: $org) {
+              stargazers(first: 100 orderBy: {field: STARRED_AT direction: DESC} after: $nextPageCursor_0) {
+                pageInfo {
+                  hasNextPage_0: hasNextPage
+                  startCursor_0: startCursor
+                  endCursor_0: endCursor
+                }
+                edges {
+                  user: node {
+                    node_id: id
+                    id: databaseId
+                    login
+                    avatar_url: avatarUrl
+                    html_url: url
+                    type: __typename
+                    site_admin: isSiteAdmin
+                  }
+                  starred_at: starredAt
+                }
+              }
+            }
+            rateLimit {
+              cost
+            }
+          }
+        """  # noqa: E501
+
+    schema = th.PropertiesList(
+        # Parent Keys
+        th.Property("repo", th.StringType),
+        th.Property("org", th.StringType),
+        th.Property("repo_id", th.IntegerType),
+        # Stargazer Info
+        th.Property("user_id", th.IntegerType),
+        th.Property("starred_at", th.DateTimeType),
+        th.Property("user", user_object),
+    ).to_dict()
+
+
 class StatsContributorsStream(GitHubRestStream):
     """
     Defines 'StatsContributors' stream. Fetching contributors activity.
