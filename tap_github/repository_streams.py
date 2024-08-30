@@ -1840,9 +1840,9 @@ class DiscussionsStream(GitHubGraphqlStream):
                   }
                 }
               }
-              rateLimit {
-                cost
-              }
+            }
+            rateLimit {
+              cost
             }
           }
         """  # noqa: E501
