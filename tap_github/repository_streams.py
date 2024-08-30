@@ -1817,22 +1817,21 @@ class DiscussionsStream(GitHubGraphqlStream):
         """Return dynamic GraphQL query."""
         # Graphql id is equivalent to REST node_id. To keep the tap consistent, we rename "id" to "node_id".  # noqa: E501
         return """
-          query repositoryDiscussions($repo: String! $org: String! $nextPageCursor_0: String) {
+          query repositoryDiscussions($repo: String!, $org: String!, $nextPageCursor_0: String) {
             repository(name: $repo, owner: $org) {
-              discussions(first: 100 orderBy: {field: UPDATED_AT direction: DESC} after: $nextPageCursor_0) {
+              discussions(first: 100, orderBy: {field: UPDATED_AT, direction: DESC}, after: $nextPageCursor_0) {
                 pageInfo {
                   hasNextPage_0: hasNextPage
                   startCursor_0: startCursor
                   endCursor_0: endCursor
                 }
-
                 nodes {
-                  node_id: id,
-                  id: databaseId,
-                  title,
-                  body_text: bodyText,
-                  updated_at: updatedAt,
-                  created_at: createdAt,
+                  node_id: id
+                  id: databaseId
+                  title
+                  body_text: bodyText
+                  updated_at: updatedAt
+                  created_at: createdAt
                   author {
                     login
                     avatar_url: avatarUrl
@@ -1841,8 +1840,9 @@ class DiscussionsStream(GitHubGraphqlStream):
                   }
                 }
               }
-            rateLimit {
-              cost
+              rateLimit {
+                cost
+              }
             }
           }
         """  # noqa: E501
