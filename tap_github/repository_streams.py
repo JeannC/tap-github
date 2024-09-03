@@ -1833,10 +1833,15 @@ class DiscussionsStream(GitHubGraphqlStream):
                   updated_at: updatedAt
                   created_at: createdAt
                   author {
+                  ... on User{   
+                    node_id: id
+                    id: databaseId
                     login
                     avatar_url: avatarUrl
                     html_url: url
                     type: __typename
+                    site_admin: isSiteAdmin
+                    }
                   }
                 }
               }
@@ -1847,12 +1852,13 @@ class DiscussionsStream(GitHubGraphqlStream):
           }
         """  # noqa: E501
 
+
     schema = th.PropertiesList(
         # Parent Keys
         th.Property("repo", th.StringType),
         th.Property("org", th.StringType),
         th.Property("repo_id", th.IntegerType),
-        # Stargazer Info
+        # Discussion Info
         th.Property("node_id", th.StringType),
         th.Property("id", th.IntegerType),
         th.Property("title", th.StringType),
