@@ -1778,7 +1778,7 @@ class DiscussionsStream(GitHubGraphqlStream):
         """
         Add a user_id top-level field to be used as state replication key.
         """
-        self.logger.info(f'Row retrieved: {row}')
+        self.logger.info(f"Row retrieved: {row}")
         row = super().post_process(row, context)
         row["user_id"] = row["user"]["id"]
         return row
@@ -1834,7 +1834,7 @@ class DiscussionsStream(GitHubGraphqlStream):
                   updated_at: updatedAt
                   created_at: createdAt
                   author {
-                  ... on User{   
+                  ... on User{
                     node_id: id
                     id: databaseId
                     login
@@ -1852,7 +1852,6 @@ class DiscussionsStream(GitHubGraphqlStream):
             }
           }
         """  # noqa: E501
-
 
     schema = th.PropertiesList(
         # Parent Keys
