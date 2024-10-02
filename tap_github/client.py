@@ -185,7 +185,9 @@ class GitHubRestStream(RESTStream):
         .. _requests.Response:
             https://docs.python-requests.org/en/latest/api/#requests.Response
         """
-        self.logger.info(f"Response: {response}")
+        try:
+            self.logger.info(f"Response JSON: {response.json}")
+            
         full_path = urlparse(response.url).path
         if response.status_code in (
             [*self.tolerated_http_errors, EMPTY_REPO_ERROR_STATUS]
