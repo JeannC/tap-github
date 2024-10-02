@@ -187,7 +187,9 @@ class GitHubRestStream(RESTStream):
         """
         try:
             self.logger.info(f"Response JSON: {response.json}")
-            
+        except:
+            pass
+        
         full_path = urlparse(response.url).path
         if response.status_code in (
             [*self.tolerated_http_errors, EMPTY_REPO_ERROR_STATUS]
