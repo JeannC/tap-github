@@ -1781,6 +1781,7 @@ class DiscussionsStream(GitHubGraphqlStream):
         Exit early if a since parameter is provided.
         """
         request_parameters = parse_qs(str(urlparse(response.request.url).query))
+        self.logger.info(f"request_parameters: {request_parameters}")
 
         # parse_qs interprets "+" as a space, revert this to keep an aware datetime
         try:
@@ -1792,10 +1793,13 @@ class DiscussionsStream(GitHubGraphqlStream):
         except IndexError:
             since = ""
 
+        self.logger.info(f"since: {since}")
         # If since parameter is present, try to exit early by looking at the last "updated_at".  # noqa: E501
         # Noting that we are traversing in DESCENDING order by STARRED_AT.
         if since:
             results = list(extract_jsonpath(self.query_jsonpath, input=response.json()))
+            self.logger.info(f"results: {results}")
+
             # If no results, return None to exit early.
             if len(results) == 0:
                 return None
