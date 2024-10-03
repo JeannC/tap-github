@@ -1768,20 +1768,11 @@ class DiscussionsStream(GitHubGraphqlStream):
 
     name = "discussions"
     query_jsonpath = "$.data.repository.discussions.nodes.[*]"
-    primary_keys: ClassVar[list[str]] = ["discussion_id", "repo_id"]
+    primary_keys: ClassVar[list[str]] = ["id"]
     replication_key = "updated_at"
     parent_stream_type = RepositoryStream
-    state_partitioning_keys: ClassVar[list[str]] = ["repo_id"]
+    state_partitioning_keys: ClassVar[list[str]] = ["repo", "org"]
     ignore_parent_replication_key = False
-
-    def post_process(self, row: dict, context: dict | None = None) -> dict:
-        """
-        Add a user_id top-level field to be used as state replication key.
-        """
-        self.logger.info(f"Row retrieved: {row}")
-        row = super().post_process(row, context)
-        row["discussion_id"] = row["author"]["id"]
-        return row
 
     def get_next_page_token(
         self, response: requests.Response, previous_token: Any | None
