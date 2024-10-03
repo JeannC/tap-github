@@ -1767,7 +1767,7 @@ class DiscussionsStream(GitHubGraphqlStream):
     """Defines stream fetching discussions from each repository."""
 
     name = "discussions"
-    query_jsonpath = "$.data.repository.discussions.edges.[*]"
+    query_jsonpath = "$.data.repository.discussions.nodes.[*]"
     primary_keys: ClassVar[list[str]] = ["id", "repo_id"]
     replication_key = "updated_at"
     parent_stream_type = RepositoryStream
