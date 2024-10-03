@@ -1768,7 +1768,7 @@ class DiscussionsStream(GitHubGraphqlStream):
 
     name = "discussions"
     query_jsonpath = "$.data.repository.discussions.nodes.[*]"
-    primary_keys: ClassVar[list[str]] = ["id", "repo_id"]
+    primary_keys: ClassVar[list[str]] = ["discussion_id", "repo_id"]
     replication_key = "updated_at"
     parent_stream_type = RepositoryStream
     state_partitioning_keys: ClassVar[list[str]] = ["repo_id"]
@@ -1780,7 +1780,7 @@ class DiscussionsStream(GitHubGraphqlStream):
         """
         self.logger.info(f"Row retrieved: {row}")
         row = super().post_process(row, context)
-        row["user_id"] = row["user"]["id"]
+        row["discussion_id"] = row["author"]["id"]
         return row
 
     def get_next_page_token(
