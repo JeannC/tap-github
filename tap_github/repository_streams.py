@@ -1828,7 +1828,40 @@ class DiscussionsStream(GitHubGraphqlStream):
                   body_text: bodyText
                   updated_at: updatedAt
                   created_at: createdAt
+                  category {
+                    id
+                    name
+                  }
                   author {
+                  ... on User{
+                    node_id: id
+                    id: databaseId
+                    login
+                    avatar_url: avatarUrl
+                    html_url: url
+                    type: __typename
+                    site_admin: isSiteAdmin
+                    }
+                  }
+                  authorAssociation
+                  answer {
+                    id: databaseId
+                    node_id: id
+                    body
+                    author {
+                    ... on User{
+                      node_id: id
+                      id: databaseId
+                      login
+                      avatar_url: avatarUrl
+                      html_url: url
+                      type: __typename
+                      site_admin: isSiteAdmin
+                      }
+                    }
+                    authorAssociation
+                  }
+                  answerChosenBy {
                   ... on User{
                     node_id: id
                     id: databaseId
