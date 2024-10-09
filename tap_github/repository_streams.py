@@ -1802,10 +1802,13 @@ class DiscussionsStream(GitHubGraphqlStream):
 
             # If no results, return None to exit early.
             if len(results) == 0:
+                self.logger.info("CASE 1: empty results")
                 return None
             last = results[-1]
             if parse(last["updated_at"]) < parse(since):
+                self.logger.info(f"CASE 2: last updated at {last["updated_at"]} is less than since {since}")
                 return None
+        self.logger.info(f"CASE 3: moving on to parent class get_next_page_token with previous_token {previous_token} and response {response.json}")
         return super().get_next_page_token(response, previous_token)
 
     @property
