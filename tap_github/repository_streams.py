@@ -1834,13 +1834,7 @@ class DiscussionsStream(GitHubGraphqlStream):
                   node_id: id
                   id: databaseId
                   title
-                  body_text: bodyText
-                  updated_at: updatedAt
-                  created_at: createdAt
-                  category {
-                    id
-                    name
-                  }
+                  body: bodyText
                   author {
                   ... on User{
                     node_id: id
@@ -1852,7 +1846,13 @@ class DiscussionsStream(GitHubGraphqlStream):
                     site_admin: isSiteAdmin
                     }
                   }
-                  authorAssociation
+                  author_association: authorAssociation
+                  category {
+                    id
+                    name
+                  }
+                  updated_at: updatedAt
+                  created_at: createdAt
                   answer {
                     id: databaseId
                     node_id: id
@@ -1868,9 +1868,9 @@ class DiscussionsStream(GitHubGraphqlStream):
                       site_admin: isSiteAdmin
                       }
                     }
-                    authorAssociation
+                    author_association: authorAssociation
                   }
-                  answerChosenBy {
+                  answer_chosen_by: answerChosenBy {
                   ... on User{
                     node_id: id
                     id: databaseId
@@ -1890,6 +1890,19 @@ class DiscussionsStream(GitHubGraphqlStream):
           }
         """  # noqa: E501
 
+    category_object = th.ObjectType(
+        th.Property("id", th.IntegerType),
+        th.Property("name", th.StringType),
+    )
+
+    answer_object = th.ObjectType(
+        th.Property("id", th.IntegerType),
+        th.Property("node_id", th.StringType),
+        th.Property("body", th.StringType),
+        th.Property("author", user_object),
+        th.Property("author_association", th.StringType),
+    )
+
     schema = th.PropertiesList(
         # Parent Keys
         th.Property("repo", th.StringType),
@@ -1899,10 +1912,14 @@ class DiscussionsStream(GitHubGraphqlStream):
         th.Property("node_id", th.StringType),
         th.Property("id", th.IntegerType),
         th.Property("title", th.StringType),
-        th.Property("body_text", th.StringType),
+        th.Property("body", th.StringType),
+        th.Property("author", user_object),
+        th.Property("author_association", th.StringType),
+        th.Property("category", category_object),
         th.Property("updated_at", th.DateTimeType),
         th.Property("created_at", th.DateTimeType),
-        th.Property("author", user_object),
+        th.Property("answer", answer_object),
+        th.Property("answer_chosen_by", user_object),
     ).to_dict()
 
 
