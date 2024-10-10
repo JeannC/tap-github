@@ -1807,11 +1807,13 @@ class DiscussionsStream(GitHubGraphqlStream):
             last = results[-1]
             if parse(last["updated_at"]) < parse(since):
                 self.logger.info(
-                    f"CASE 2: last updated at {last['updated_at']} is less than since {since}"
+                    f"CASE 2: last updated at {last['updated_at']} "
+                    f"is less than since {since}"
                 )
                 return None
         self.logger.info(
-            f"CASE 3: moving on to super().get_next_page_token with previous_token {previous_token} and response {response.json}"
+            f"CASE 3: moving on to super().get_next_page_token with previous_token "
+            f"{previous_token} and response {response.json}"
         )
         return super().get_next_page_token(response, previous_token)
 
