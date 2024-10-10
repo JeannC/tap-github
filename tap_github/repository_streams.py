@@ -1848,8 +1848,10 @@ class DiscussionsStream(GitHubGraphqlStream):
                   }
                   author_association: authorAssociation
                   category {
-                    id
+                    node_id: id
+                    slug
                     name
+                    description
                   }
                   updated_at: updatedAt
                   created_at: createdAt
@@ -1891,8 +1893,10 @@ class DiscussionsStream(GitHubGraphqlStream):
         """  # noqa: E501
 
     category_object = th.ObjectType(
-        th.Property("id", th.IntegerType),
+        th.Property("node_id", th.StringType),
+        th.Property("slug", th.StringType),
         th.Property("name", th.StringType),
+        th.Property("description", th.StringType),
     )
 
     answer_object = th.ObjectType(
