@@ -1833,8 +1833,19 @@ class DiscussionsStream(GitHubGraphqlStream):
                 nodes {
                   node_id: id
                   id: databaseId
+                  number
                   title
                   body: bodyText
+                  url
+                  created_at: createdAt
+                  published_at: publishedAt
+                  last_edited_at: lastEditedAt
+                  answer_chosen_at: answerChosenAt
+                  updated_at: updatedAt
+                  closed_at: closedAt
+
+                  created_via_email: createdViaEmail
+
                   author {
                   ... on User{
                     node_id: id
@@ -1853,8 +1864,25 @@ class DiscussionsStream(GitHubGraphqlStream):
                     name
                     description
                   }
-                  updated_at: updatedAt
-                  created_at: createdAt
+                  labels {
+                    edges {
+                      node {
+                        node_id: id
+                        id: databaseId
+                        created_at: createdAt
+                        name
+                        description
+                        url
+                        resource_path: resourcePath
+                        color
+                        default: is_default
+                      }
+                    }
+                  }
+                  locked
+                  active_lock_reason: activeLockReason
+                  closed
+                  is_answered: isAnswered
                   answer {
                     id: databaseId
                     node_id: id
@@ -1883,6 +1911,22 @@ class DiscussionsStream(GitHubGraphqlStream):
                     site_admin: isSiteAdmin
                     }
                   }
+                  upvote_count: upvoteCount
+                  reactions(first: 100, after: $reactionsCursor) {
+                    pageInfo {
+                      endCursor
+                      hasNextPage
+                    }
+                    edges {
+                      node {
+                        reaction_type: content
+                        reacted_at: createdAt
+                        user {
+                          login
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1907,6 +1951,28 @@ class DiscussionsStream(GitHubGraphqlStream):
         th.Property("author_association", th.StringType),
     )
 
+    labels_array = th.ArrayType(
+        th.ObjectType(
+            th.Property("id", th.IntegerType),
+            th.Property("node_id", th.StringType),
+            th.Property("created_at", th.DateTimeType),
+            th.Property("name", th.StringType),
+            th.Property("description", th.StringType),
+            th.Property("url", th.StringType),
+            th.Property("resource_path", th.StringType),
+            th.Property("color", th.StringType),
+            th.Property("default", th.BooleanType),
+        )
+    )
+
+    reactions_array = th.ArrayType(
+        th.ObjectType(
+            th.Property("reaction_type", th.StringType),
+            th.Property("reacted_at", th.DateTimeType),
+            th.Property("user", th.ObjectType(th.Property("login", th.StringType))),
+        )
+    )
+
     schema = th.PropertiesList(
         # Parent Keys
         th.Property("repo", th.StringType),
@@ -1915,15 +1981,29 @@ class DiscussionsStream(GitHubGraphqlStream):
         # Discussion Info
         th.Property("node_id", th.StringType),
         th.Property("id", th.IntegerType),
+        th.Property("number", th.IntegerType),
         th.Property("title", th.StringType),
         th.Property("body", th.StringType),
+        th.Property("url", th.StringType),
+        th.Property("created_at", th.DateTimeType),
+        th.Property("published_at", th.DateTimeType),
+        th.Property("last_edited_at", th.DateTimeType),
+        th.Property("answer_chosen_at", th.DateTimeType),
+        th.Property("updated_at", th.DateTimeType),
+        th.Property("closed_at", th.DateTimeType),
+        th.Property("created_via_email", th.BooleanType),
         th.Property("author", user_object),
         th.Property("author_association", th.StringType),
         th.Property("category", category_object),
-        th.Property("updated_at", th.DateTimeType),
-        th.Property("created_at", th.DateTimeType),
+        th.Property("labels", labels_array),
+        th.Property("locked", th.BooleanType),
+        th.Property("active_lock_reason", th.StringType),
+        th.Property("closed", th.BooleanType),
+        th.Property("is_answered", th.BooleanType),
         th.Property("answer", answer_object),
         th.Property("answer_chosen_by", user_object),
+        th.Property("upvote_count", th.IntegerType),
+        th.Property("reactions", reactions_array),
     ).to_dict()
 
 
