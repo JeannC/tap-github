@@ -1868,14 +1868,13 @@ class DiscussionsStream(GitHubGraphqlStream):
                     edges {
                       node {
                         node_id: id
-                        id: databaseId
                         created_at: createdAt
                         name
                         description
                         url
                         resource_path: resourcePath
                         color
-                        default: is_default
+                        default: isDefault
                       }
                     }
                   }
