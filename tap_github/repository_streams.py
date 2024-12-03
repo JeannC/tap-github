@@ -1864,7 +1864,7 @@ class DiscussionsStream(GitHubGraphqlStream):
                     name
                     description
                   }
-                  labels {
+                  labels(first: 100) {
                     edges {
                       node {
                         node_id: id
