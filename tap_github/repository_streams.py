@@ -1912,11 +1912,7 @@ class DiscussionsStream(GitHubGraphqlStream):
                     }
                   }
                   upvote_count: upvoteCount
-                  reactions(first: 100, after: $reactionsCursor) {
-                    pageInfo {
-                      endCursor
-                      hasNextPage
-                    }
+                  reactions(first: 100) {
                     edges {
                       node {
                         reaction_type: content
