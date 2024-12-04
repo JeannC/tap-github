@@ -1773,6 +1773,7 @@ class DiscussionsStream(GitHubGraphqlStream):
     parent_stream_type = RepositoryStream
     state_partitioning_keys: ClassVar[list[str]] = ["repo", "org"]
     ignore_parent_replication_key = False
+    use_fake_since_parameter = True
 
     def get_next_page_token(
         self, response: requests.Response, previous_token: Any | None

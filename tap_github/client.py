@@ -398,6 +398,7 @@ class GitHubGraphqlStream(GraphQLStream, GitHubRestStream):
             params.update(next_page_token)
 
         since = self.get_starting_timestamp(context)
+        self.logger.info(f"ATTENTION! since set to {since} because of {context}")
         if self.replication_key and since:
             params["since"] = since.isoformat(sep="T")
 
