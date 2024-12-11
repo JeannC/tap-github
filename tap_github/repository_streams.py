@@ -2002,6 +2002,108 @@ class DiscussionsStream(GitHubGraphqlStream):
     ).to_dict()
 
 
+class DiscussionCategoriesStream(GitHubGraphqlStream):
+    """Defines stream fetching discussions categories from each repository."""
+
+    name = "discussions_categories"
+    query_jsonpath = "$.data.repository.discussionCategories.nodes.[*]"
+    primary_keys: ClassVar[list[str]] = ["id"]
+    replication_key = "updated_at"
+    parent_stream_type = RepositoryStream
+    state_partitioning_keys: ClassVar[list[str]] = ["repo", "org"]
+    ignore_parent_replication_key = False
+    use_fake_since_parameter = True
+
+# Stargazer navigation functions # noqa: E501
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: Any | None
+    ) -> Any | None:
+        """
+        Exit early if a since parameter is provided.
+        """
+        request_parameters = parse_qs(str(urlparse(response.request.url).query))
+        self.logger.info(f"request_parameters: {request_parameters}")
+
+        # parse_qs interprets "+" as a space, revert this to keep an aware datetime
+        try:
+            since = (
+                request_parameters["since"][0].replace(" ", "+")
+                if "since" in request_parameters
+                else ""
+            )
+        except IndexError:
+            since = ""
+
+        self.logger.info(f"since: {since}")
+        # If since parameter is present, try to exit early by looking at the last "updated_at".  # noqa: E501
+        # Noting that we are traversing in DESCENDING order by STARRED_AT.
+        if since:
+            results = list(extract_jsonpath(self.query_jsonpath, input=response.json()))
+            self.logger.info(f"results: {results}")
+
+            # If no results, return None to exit early.
+            if len(results) == 0:
+                self.logger.info("CASE 1: empty results")
+                return None
+            last = results[-1]
+            if parse(last["updated_at"]) < parse(since):
+                self.logger.info(
+                    f"CASE 2: last updated at {last['updated_at']} "
+                    f"is less than since {since}"
+                )
+                return None
+        self.logger.info(
+            f"CASE 3: moving on to super().get_next_page_token with previous_token "
+            f"{previous_token} and response {response.json}"
+        )
+        return super().get_next_page_token(response, previous_token)
+
+    @property
+    def query(self) -> str:
+        """Return dynamic GraphQL query."""
+        # Graphql id is equivalent to REST node_id. To keep the tap consistent, we rename "id" to "node_id".  # noqa: E501
+
+        return """
+            query DiscussionCategories($repo: String!, $org: String!, $nextPageCursor_0: String) {
+            repository(name: $repo, owner: $org) {
+                discussionCategories(first: 100, orderBy: {field: UPDATED_AT, direction: DESC}, after: $nextPageCursor_0) {
+                pageInfo {
+                  hasNextPage_0: hasNextPage
+                  startCursor_0: startCursor
+                  endCursor_0: endCursor
+                }
+                nodes {
+                id
+                slug
+                name
+                description
+                isAnswerable
+                emoji
+                createdAt
+                updatedAt
+                }
+            }
+            }
+            }
+            """ # noqa: E501
+
+    schema = th.PropertiesList(
+        # Parent Keys
+        th.Property("repo", th.StringType),
+        th.Property("org", th.StringType),
+        th.Property("repo_id", th.IntegerType),
+        # Categories Info
+        th.Property("id", th.StringType),
+        th.Property("slug", th.StringType),
+        th.Property("name", th.StringType),
+        th.Property("description", th.StringType),
+        th.Property("isAnswerable", th.BooleanType),
+        th.Property("emoji", th.StringType),
+        th.Property("created_at", th.DateTimeType),
+        th.Property("updated_at", th.DateTimeType),
+    ).to_dict()
+
+
 class StatsContributorsStream(GitHubRestStream):
     """
     Defines 'StatsContributors' stream. Fetching contributors activity.
