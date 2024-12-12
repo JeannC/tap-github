@@ -2073,7 +2073,7 @@ class DiscussionCategoriesStream(GitHubGraphqlStream):
                   endCursor_0: endCursor
                 }
                 nodes {
-                id
+                node_id: id
                 slug
                 name
                 description
@@ -2093,7 +2093,7 @@ class DiscussionCategoriesStream(GitHubGraphqlStream):
         th.Property("org", th.StringType),
         th.Property("repo_id", th.IntegerType),
         # Categories Info
-        th.Property("id", th.StringType),
+        th.Property("node_id", th.StringType),
         th.Property("slug", th.StringType),
         th.Property("name", th.StringType),
         th.Property("description", th.StringType),
