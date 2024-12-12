@@ -21,6 +21,7 @@ from tap_github.repository_streams import (
     DependenciesStream,
     DependentsStream,
     DiscussionsStream,
+    DiscussionCategoriesStream,
     EventsStream,
     ExtraMetricsStream,
     IssueCommentsStream,
