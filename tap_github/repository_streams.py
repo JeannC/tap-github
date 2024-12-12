@@ -2005,7 +2005,7 @@ class DiscussionsStream(GitHubGraphqlStream):
 class DiscussionCategoriesStream(GitHubGraphqlStream):
     """Defines stream fetching discussions categories from each repository."""
 
-    name = "discussions_categories"
+    name = "discussion_categories"
     query_jsonpath = "$.data.repository.discussionCategories.nodes.[*]"
     primary_keys: ClassVar[list[str]] = ["id"]
     replication_key = "updated_at"
