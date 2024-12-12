@@ -80,6 +80,7 @@ class Streams(Enum):
             DependenciesStream,
             DependentsStream,
             DiscussionsStream,
+            DiscussionCategoriesStream,
             EventsStream,
             IssueCommentsStream,
             IssueEventsStream,
