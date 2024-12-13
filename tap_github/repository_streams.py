@@ -2007,7 +2007,7 @@ class DiscussionCategoriesStream(GitHubGraphqlStream):
 
     name = "discussion_categories"
     query_jsonpath = "$.data.repository.discussionCategories.nodes.[*]"
-    primary_keys: ClassVar[list[str]] = ["id"]
+    primary_keys: ClassVar[list[str]] = ["node_id"]
     replication_key = "updated_at"
     parent_stream_type = RepositoryStream
     state_partitioning_keys: ClassVar[list[str]] = ["repo", "org"]
