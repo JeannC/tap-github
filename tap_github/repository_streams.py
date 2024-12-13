@@ -2077,9 +2077,9 @@ class DiscussionCategoriesStream(GitHubGraphqlStream):
                 slug
                 name
                 description
-                isAnswerable
+                is_answerable: isAnswerable
                 emoji
-                createdAt
+                created_at: createdAt
                 updated_at: updatedAt
                 }
             }
@@ -2097,7 +2097,7 @@ class DiscussionCategoriesStream(GitHubGraphqlStream):
         th.Property("slug", th.StringType),
         th.Property("name", th.StringType),
         th.Property("description", th.StringType),
-        th.Property("isAnswerable", th.BooleanType),
+        th.Property("is_answerable", th.BooleanType),
         th.Property("emoji", th.StringType),
         th.Property("created_at", th.DateTimeType),
         th.Property("updated_at", th.DateTimeType),
