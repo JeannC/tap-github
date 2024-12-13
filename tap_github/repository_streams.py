@@ -2080,7 +2080,7 @@ class DiscussionCategoriesStream(GitHubGraphqlStream):
                 isAnswerable
                 emoji
                 createdAt
-                updatedAt
+                updated_at: updatedAt
                 }
             }
             }
