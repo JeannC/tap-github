@@ -2066,7 +2066,7 @@ class DiscussionCategoriesStream(GitHubGraphqlStream):
         return """
             query DiscussionCategories($repo: String!, $org: String!, $nextPageCursor_0: String) {
             repository(name: $repo, owner: $org) {
-                discussionCategories(first: 100, orderBy: {field: UPDATED_AT, direction: DESC}, after: $nextPageCursor_0) {
+                discussionCategories(first: 100, after: $nextPageCursor_0) {
                 pageInfo {
                   hasNextPage_0: hasNextPage
                   startCursor_0: startCursor
