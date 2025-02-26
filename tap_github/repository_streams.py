@@ -2164,7 +2164,7 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
         # Graphql id is equivalent to REST node_id. To keep the tap consistent, we rename "id" to "node_id".  # noqa: E501
 
         return """
-            query PinnedDiscussions($cursor: String) {
+            query PinnedDiscussions($repo: String!, $org: String!, $nextPageCursor_0: String) {
             repository(owner: "Shopify", name: "shopify-data-platform") {
                 pinnedDiscussions(first: 100, after: $nextPageCursor_0) {
                 pageInfo {
