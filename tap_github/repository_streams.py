@@ -2103,6 +2103,127 @@ class DiscussionCategoriesStream(GitHubGraphqlStream):
         th.Property("updated_at", th.DateTimeType),
     ).to_dict()
 
+class PinnedDiscussionStream(GitHubGraphqlStream):
+    """Defines stream fetching events on pinned discussions from each repository."""
+
+    name = "pinned_discussions"
+    query_jsonpath = "$.data.repository.pinnedDiscussions.nodes.[*]"
+    primary_keys: ClassVar[list[str]] = ["node_id"]
+    replication_key = "updated_at"
+    parent_stream_type = RepositoryStream
+    state_partitioning_keys: ClassVar[list[str]] = ["repo", "org"]
+    ignore_parent_replication_key = False
+    use_fake_since_parameter = True
+
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: Any | None
+    ) -> Any | None:
+        """
+        Exit early if a since parameter is provided.
+        """
+        request_parameters = parse_qs(str(urlparse(response.request.url).query))
+        self.logger.info(f"request_parameters: {request_parameters}")
+
+        # parse_qs interprets "+" as a space, revert this to keep an aware datetime
+        try:
+            since = (
+                request_parameters["since"][0].replace(" ", "+")
+                if "since" in request_parameters
+                else ""
+            )
+        except IndexError:
+            since = ""
+
+        self.logger.info(f"since: {since}")
+        # If since parameter is present, try to exit early by looking at the last "updated_at".  # noqa: E501
+        # Noting that we are traversing in DESCENDING order by STARRED_AT.
+        if since:
+            results = list(extract_jsonpath(self.query_jsonpath, input=response.json()))
+            self.logger.info(f"results: {results}")
+
+            # If no results, return None to exit early.
+            if len(results) == 0:
+                self.logger.info("CASE 1: empty results")
+                return None
+            last = results[-1]
+            if parse(last["updated_at"]) < parse(since):
+                self.logger.info(
+                    f"CASE 2: last updated at {last['updated_at']} "
+                    f"is less than since {since}"
+                )
+                return None
+        self.logger.info(
+            f"CASE 3: moving on to super().get_next_page_token with previous_token "
+            f"{previous_token} and response {response.json}"
+        )
+        return super().get_next_page_token(response, previous_token)
+
+    @property
+    def query(self) -> str:
+        """Return dynamic GraphQL query."""
+        # Graphql id is equivalent to REST node_id. To keep the tap consistent, we rename "id" to "node_id".  # noqa: E501
+
+        return """
+            query PinnedDiscussions($cursor: String) {
+            repository(owner: "Shopify", name: "shopify-data-platform") {
+                pinnedDiscussions(first: 100, after: $nextPageCursor_0) {
+                pageInfo {
+                    hasNextPage_0: hasNextPage
+                    startCursor_0: startCursor
+                    endCursor_0: endCursor
+                }
+                edges {
+                    node {
+                    pinnedBy {
+                        ... on User {
+                          node_id: id
+                          id: databaseId
+                          login
+                         avatar_url: avatarUrl
+                          html_url: url
+                          type: __typename
+                          site_admin: isSiteAdmin
+                        }
+                    }
+                    node_id: id
+                    discussion {
+                        node_id: id
+                        id: databaseId
+                        number
+                        title
+                        discussion_url: url
+                    }
+                    gradient_stop_colors: gradientStopColors
+                    pattern
+                    preconfigured_gradient: preconfiguredGradient
+                    created_at: createdAt
+                    updated_at: updatedAt
+                    }
+                }
+                }
+            }
+            }
+            """ # noqa: E501
+    
+    schema = th.PropertiesList(
+        # Parent Keys
+        th.Property("repo", th.StringType),
+        th.Property("org", th.StringType),
+        th.Property("repo_id", th.IntegerType),
+        # Discussion Info 
+        th.Property("node_id", th.StringType),
+        th.Property("id", th.IntegerType),
+        th.Property("number", th.IntegerType),
+        th.Property("title", th.StringType),
+        th.Property("discussion_url", th.StringType),
+        th.Property("created_at", th.DateTimeType),
+        th.Property("updated_at", th.DateTimeType),
+        th.Property("pinnedBy", user_object),
+        th.Property("preconfigured_gradient", th.StringType),
+        th.Property("pattern", th.StringType),
+        th.Property("gradient_stop_colors", th.StringType),
+    ).to_dict()
+
 
 class StatsContributorsStream(GitHubRestStream):
     """
