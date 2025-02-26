@@ -2166,7 +2166,7 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
         return """
             query PinnedDiscussions($repo: String!, $org: String!, $nextPageCursor_0: String) {
             repository(owner: "Shopify", name: "shopify-data-platform") {
-                pinnedDiscussions(first: 100, after: $nextPageCursor_0) {
+                pinnedDiscussions(first: 100, orderBy: {field: UPDATED_AT, direction: DESC},after: $nextPageCursor_0) {
                 pageInfo {
                     hasNextPage_0: hasNextPage
                     startCursor_0: startCursor
@@ -2174,6 +2174,14 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
                 }
                 edges {
                     node {
+                    node_id: id
+                    discussion {
+                        node_id: id
+                        id: databaseId
+                        number
+                        title
+                        discussion_url: url
+                    }
                     pinnedBy {
                         ... on User {
                           node_id: id
@@ -2184,14 +2192,6 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
                           type: __typename
                           site_admin: isSiteAdmin
                         }
-                    }
-                    node_id: id
-                    discussion {
-                        node_id: id
-                        id: databaseId
-                        number
-                        title
-                        discussion_url: url
                     }
                     gradient_stop_colors: gradientStopColors
                     pattern
@@ -2216,7 +2216,7 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
         th.Property("number", th.IntegerType),
         th.Property("title", th.StringType),
         th.Property("discussion_url", th.StringType),
-        th.Property("created_at", th.DateTimeType),
+        th.Property("created_at", th.DateTimeType), # DateTime when the discussion was pinned
         th.Property("updated_at", th.DateTimeType),
         th.Property("pinnedBy", user_object),
         th.Property("preconfigured_gradient", th.StringType),
