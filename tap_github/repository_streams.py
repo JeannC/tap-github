@@ -2165,7 +2165,7 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
 
         return """
             query PinnedDiscussions($repo: String!, $org: String!, $nextPageCursor_0: String) {
-            repository(owner: "Shopify", name: "shopify-data-platform") {
+            repository(name: $repo, owner: $org) {
                 pinnedDiscussions(first: 100, orderBy: {field: UPDATED_AT, direction: DESC},after: $nextPageCursor_0) {
                 pageInfo {
                     hasNextPage_0: hasNextPage
