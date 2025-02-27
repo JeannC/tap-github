@@ -1557,7 +1557,6 @@ class ContributorsStream(GitHubRestStream):
 
     def validate_response(self, response: requests.Response) -> None:
         """Allow some specific errors."""
-        if response.status_code == 403:
             contents = response.json()
             if (
                 contents["message"]
@@ -2102,6 +2101,204 @@ class DiscussionCategoriesStream(GitHubGraphqlStream):
         th.Property("created_at", th.DateTimeType),
         th.Property("updated_at", th.DateTimeType),
     ).to_dict()
+
+class DiscussionsCommentsStream(GitHubGraphqlStream):
+    """Defines stream fetching discussion comments from each repository."""
+
+    name = "discussions_comments"
+    query_jsonpath = "$.data.repository.discussions.nodes.[*].comments.nodes.[*]"
+    primary_keys: ClassVar[list[str]] = ["id"] #node_id is renamed to id
+    replication_key = "updated_at"
+    parent_stream_type = DiscussionsStream
+    state_partitioning_keys: ClassVar[list[str]] = ["repo", "org"]
+    ignore_parent_replication_key = False
+    use_fake_since_parameter = True
+
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: Any | None
+    ) -> Any | None:
+        """
+        Exit early if a since parameter is provided.
+        """
+        request_parameters = parse_qs(str(urlparse(response.request.url).query))
+        self.logger.info(f"request_parameters: {request_parameters}")
+
+        # parse_qs interprets "+" as a space, revert this to keep an aware datetime
+        try:
+            since = (
+                request_parameters["since"][0].replace(" ", "+")
+                if "since" in request_parameters
+                else ""
+            )
+        except IndexError:
+            since = ""
+
+        self.logger.info(f"since: {since}")
+        # If since parameter is present, try to exit early by looking at the last "updated_at".  # noqa: E501
+        # Noting that we are traversing in DESCENDING order by STARRED_AT.
+        if since:
+            results = list(extract_jsonpath(self.query_jsonpath, input=response.json()))
+            self.logger.info(f"results: {results}")
+
+            # If no results, return None to exit early.
+            if len(results) == 0:
+                self.logger.info("CASE 1: empty results")
+                return None
+            last = results[-1]
+            if parse(last["updated_at"]) < parse(since):
+                self.logger.info(
+                    f"CASE 2: last updated at {last['updated_at']} "
+                    f"is less than since {since}"
+                )
+                return None
+        self.logger.info(
+            f"CASE 3: moving on to super().get_next_page_token with previous_token "
+            f"{previous_token} and response {response.json}"
+        )
+        return super().get_next_page_token(response, previous_token)
+
+    @property
+    def query(self) -> str:
+        """Return dynamic GraphQL query."""
+        # Graphql id is equivalent to REST node_id. To keep the tap consistent, we rename "id" to "node_id".  # noqa: E501
+        return """
+        query DiscussionsComments($repo: String!, $org: String!, $nextPageCursor_0: String) {
+        repository(name: $repo, owner: $org) {
+            discussions(first: 10, orderBy: {field: UPDATED_AT, direction: DESC}) {
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
+            nodes {
+                comments(first: 10) {
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+                nodes {
+                    id
+                    databaseId
+                    discussion {
+                    id
+                    number
+                    }
+                    author {
+                    ... on User {
+                        node_id: id
+                        id: databaseId
+                        login
+                        avatar_url: avatarUrl
+                        html_url: url
+                        type: __typename
+                        site_admin: isSiteAdmin
+                    }
+                    }
+                    authorAssociation
+                    body
+                    bodyHTML
+                    bodyText
+                    createdAt
+                    createdViaEmail
+                    deletedAt
+                    includesCreatedEdit
+                    isAnswer
+                    isMinimized
+                    minimizedReason
+                    lastEditedAt
+                    publishedAt
+                    upvoteCount
+                    url
+                    resourcePath
+                    editor {
+                    ... on User {
+                        node_id: id
+                        id: databaseId
+                        login
+                        avatar_url: avatarUrl
+                        html_url: url
+                        type: __typename
+                        site_admin: isSiteAdmin
+                    }
+                    }
+                    replies(first: 10) {
+                    nodes {
+                        id: commentId
+                        replyTo {
+                        id: replyToId
+                        }
+                    }
+                    }
+                    reactions(first: 10) {
+                    nodes {
+                        reaction_type: content
+                        reacted_at: createdAt
+                        user {
+                            login
+                        }
+                    }
+                    }
+                }
+                }
+            }
+            }
+        }
+        rateLimit {
+            cost
+        }
+        } """ # noqa: E501
+
+    discussion_object = th.ObjectType(
+        th.Property("id", th.IntegerType),
+        th.Property("number", th.IntegerType),
+    )
+
+    replies_array = th.ArrayType(
+        th.ObjectType(
+            th.Property("commentId", th.IntegerType),
+            th.Property("replyTo", th.ObjectType(th.Property("replyToId", th.IntegerType))),
+        )
+    )
+
+    reactions_array = th.ArrayType(
+    th.ObjectType(
+        th.Property("reaction_type", th.StringType),
+        th.Property("reacted_at", th.DateTimeType),
+        th.Property("user", th.ObjectType(th.Property("login", th.StringType))),
+    )
+    )
+
+    schema = th.PropertiesList(
+        # Parent keys
+        th.Property("repo", th.StringType),
+        th.Property("org", th.StringType),
+        th.Property("repo_id", th.IntegerType),
+        # Discussions comments keys
+        th.Property("id", th.IntegerType),
+        th.Property("databaseId", th.IntegerType),
+        th.Property("discussion", discussion_object),
+        th.Property("author", user_object),
+        th.Property("authorAssociation", th.StringType),
+        th.Property("body", th.StringType),
+        th.Property("bodyHTML", th.StringType),
+        th.Property("bodyText", th.StringType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("createdViaEmail", th.BooleanType),
+        th.Property("deletedAt", th.DateTimeType),
+        th.Property("includesCreatedEdit", th.BooleanType),
+        th.Property("isAnswer", th.BooleanType),
+        th.Property("isMinimized", th.BooleanType),
+        th.Property("minimizedReason", th.StringType),
+        th.Property("lastEditedAt", th.DateTimeType),
+        th.Property("publishedAt", th.DateTimeType),
+        th.Property("upvoteCount", th.IntegerType),
+        th.Property("url", th.StringType),
+        th.Property("resourcePath", th.StringType),
+        th.Property("editor", user_object),
+        th.Property("replies", replies_array),
+        th.Property("reactions", reactions_array),
+    ).to_dict()
+
+
 
 
 class StatsContributorsStream(GitHubRestStream):
