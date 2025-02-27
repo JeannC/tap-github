@@ -1557,8 +1557,8 @@ class ContributorsStream(GitHubRestStream):
 
     def validate_response(self, response: requests.Response) -> None:
         """Allow some specific errors."""
-            contents = response.json()
-            if (
+        contents = response.json()
+        if (
                 contents["message"]
                 == "The history or contributor list is too large to list contributors for this repository via the API."  # noqa: E501
             ):
