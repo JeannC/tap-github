@@ -2107,7 +2107,7 @@ class DiscussionsCommentsStream(GitHubGraphqlStream):
 
     name = "discussions_comments"
     query_jsonpath = "$.data.repository.discussions.nodes.[*].comments.nodes.[*]"
-    primary_keys: ClassVar[list[str]] = ["id"] #node_id is renamed to id
+    primary_keys: ClassVar[list[str]] = ["node_id"] #id is renamed to node_id
     replication_key = "updated_at"
     parent_stream_type = DiscussionsStream
     state_partitioning_keys: ClassVar[list[str]] = ["repo", "org"]
@@ -2160,26 +2160,28 @@ class DiscussionsCommentsStream(GitHubGraphqlStream):
     @property
     def query(self) -> str:
         """Return dynamic GraphQL query."""
-        # Graphql id is equivalent to REST node_id. To keep the tap consistent, we rename "id" to "node_id".  # noqa: E501
+        # Graphql id is equivalent to REST node_id. To keep the tap consistent, we rename "id" to "node_id" and "databaseId" to "id".  # noqa: E501
         return """
         query DiscussionsComments($repo: String!, $org: String!, $nextPageCursor_0: String) {
         repository(name: $repo, owner: $org) {
-            discussions(first: 10, orderBy: {field: UPDATED_AT, direction: DESC}) {
+            discussions(first: 10, orderBy: {field: UPDATED_AT, direction: DESC}, after: $nextPageCursor_0) {
             pageInfo {
-                endCursor
-                hasNextPage
+                hasNextPage_0: hasNextPage
+                startCursor_0: startCursor
+                endCursor_0: endCursor
             }
             nodes {
                 comments(first: 10) {
                 pageInfo {
-                    endCursor
-                    hasNextPage
+                    hasNextPage_0: hasNextPage
+                    startCursor_0: startCursor
+                    endCursor_0: endCursor
                 }
                 nodes {
-                    id
-                    databaseId
+                    node_id:id
+                    id:databaseId
                     discussion {
-                    id
+                    node_id: id
                     number
                     }
                     author {
@@ -2222,9 +2224,9 @@ class DiscussionsCommentsStream(GitHubGraphqlStream):
                     }
                     replies(first: 10) {
                     nodes {
-                        id: commentId
+                        comment_id: id
                         replyTo {
-                        id: replyToId
+                        replyTo_id: id
                         }
                     }
                     }
@@ -2248,14 +2250,14 @@ class DiscussionsCommentsStream(GitHubGraphqlStream):
         } """ # noqa: E501
 
     discussion_object = th.ObjectType(
-        th.Property("id", th.IntegerType),
+        th.Property("node_id", th.StringType),
         th.Property("number", th.IntegerType),
     )
 
     replies_array = th.ArrayType(
         th.ObjectType(
-            th.Property("commentId", th.IntegerType),
-            th.Property("replyTo", th.ObjectType(th.Property("replyToId", th.IntegerType))),
+            th.Property("comment_id", th.IntegerType),
+            th.Property("replyTo", th.ObjectType(th.Property("replyTo_id", th.IntegerType))),
         )
     )
 
@@ -2273,8 +2275,8 @@ class DiscussionsCommentsStream(GitHubGraphqlStream):
         th.Property("org", th.StringType),
         th.Property("repo_id", th.IntegerType),
         # Discussions comments keys
+        th.Property("node_id", th.StringType),
         th.Property("id", th.IntegerType),
-        th.Property("databaseId", th.IntegerType),
         th.Property("discussion", discussion_object),
         th.Property("author", user_object),
         th.Property("authorAssociation", th.StringType),
