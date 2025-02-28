@@ -2108,7 +2108,7 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
 
     name = "pinned_discussions"
     query_jsonpath = "$.data.repository.pinnedDiscussions.nodes.[*]"
-    primary_keys: ClassVar[list[str]] = ["node_id"]
+    primary_keys: ClassVar[list[str]] = ["id"]
     replication_key = "updated_at"
     parent_stream_type = RepositoryStream
     state_partitioning_keys: ClassVar[list[str]] = ["repo", "org"]
