@@ -2195,22 +2195,23 @@ class DiscussionsCommentsStream(GitHubGraphqlStream):
                         site_admin: isSiteAdmin
                     }
                     }
-                    authorAssociation
+                    author_association: authorAssociation
                     body
-                    bodyHTML
-                    bodyText
-                    createdAt
-                    createdViaEmail
-                    deletedAt
-                    includesCreatedEdit
-                    isAnswer
-                    isMinimized
-                    minimizedReason
-                    lastEditedAt
-                    publishedAt
-                    upvoteCount
-                    url
-                    resourcePath
+                    body_html: bodyHTML
+                    body_text: bodyText
+                    created_at: createdAt
+                    published_at: publishedAt
+                    last_edited_at: lastEditedAt
+                    updated_at: updatedAt
+                    created_via_email: createdViaEmail
+                    deleted_at: deletedAt
+                    includes_created_edit: includesCreatedEdit
+                    is_answer: isAnswer
+                    is_minimized: isMinimized
+                    minimized_reason: minimizedReason
+                    upvote_count: upvoteCount
+                    html_url: url
+                    resource_path: resourcePath
                     editor {
                     ... on User {
                         node_id: id
@@ -2279,22 +2280,23 @@ class DiscussionsCommentsStream(GitHubGraphqlStream):
         th.Property("id", th.IntegerType),
         th.Property("discussion", discussion_object),
         th.Property("author", user_object),
-        th.Property("authorAssociation", th.StringType),
+        th.Property("author_association", th.StringType),
         th.Property("body", th.StringType),
-        th.Property("bodyHTML", th.StringType),
-        th.Property("bodyText", th.StringType),
-        th.Property("createdAt", th.DateTimeType),
-        th.Property("createdViaEmail", th.BooleanType),
-        th.Property("deletedAt", th.DateTimeType),
-        th.Property("includesCreatedEdit", th.BooleanType),
-        th.Property("isAnswer", th.BooleanType),
-        th.Property("isMinimized", th.BooleanType),
-        th.Property("minimizedReason", th.StringType),
-        th.Property("lastEditedAt", th.DateTimeType),
-        th.Property("publishedAt", th.DateTimeType),
-        th.Property("upvoteCount", th.IntegerType),
-        th.Property("url", th.StringType),
-        th.Property("resourcePath", th.StringType),
+        th.Property("body_html", th.StringType),
+        th.Property("body_text", th.StringType),
+        th.Property("created_at", th.DateTimeType),
+        th.Property("published_at", th.DateTimeType),
+        th.Property("last_edited_at", th.DateTimeType),
+        th.Property("updated_at", th.DateTimeType),
+        th.Property("created_via_email", th.BooleanType),
+        th.Property("deleted_at", th.DateTimeType),
+        th.Property("includes_created_edit", th.BooleanType),
+        th.Property("is_answer", th.BooleanType),
+        th.Property("is_minimized", th.BooleanType),
+        th.Property("minimized_reason", th.StringType),
+        th.Property("upvote_count", th.IntegerType),
+        th.Property("html_url", th.StringType),
+        th.Property("resource_path", th.StringType),
         th.Property("editor", user_object),
         th.Property("replies", replies_array),
         th.Property("reactions", reactions_array),
