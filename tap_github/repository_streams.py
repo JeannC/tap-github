@@ -2109,7 +2109,7 @@ class DiscussionsCommentsStream(GitHubGraphqlStream):
     query_jsonpath = "$.data.repository.discussions.nodes.[*].comments.nodes.[*]"
     primary_keys: ClassVar[list[str]] = ["node_id"] #id is renamed to node_id
     replication_key = "updated_at"
-    parent_stream_type = DiscussionsStream
+    parent_stream_type = RepositoryStream
     state_partitioning_keys: ClassVar[list[str]] = ["repo", "org"]
     ignore_parent_replication_key = False
     use_fake_since_parameter = True
