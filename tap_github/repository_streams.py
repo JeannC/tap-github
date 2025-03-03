@@ -1773,7 +1773,7 @@ class DiscussionsStream(GitHubGraphqlStream):
     state_partitioning_keys: ClassVar[list[str]] = ["repo", "org"]
     ignore_parent_replication_key = False
     use_fake_since_parameter = True
-
+    '''
     def get_next_page_token(
         self, response: requests.Response, previous_token: Any | None
     ) -> Any | None:
@@ -1816,6 +1816,7 @@ class DiscussionsStream(GitHubGraphqlStream):
             f"{previous_token} and response {response.json}"
         )
         return super().get_next_page_token(response, previous_token)
+    '''
 
     @property
     def query(self) -> str:
