@@ -1844,6 +1844,7 @@ class DiscussionsStream(GitHubGraphqlStream):
                 }
                 nodes {
                   node_id: id
+                  id: databaseId
                   number
                   title
                   body: bodyText
