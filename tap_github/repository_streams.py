@@ -1773,6 +1773,17 @@ class DiscussionsStream(GitHubGraphqlStream):
     state_partitioning_keys: ClassVar[list[str]] = ["repo", "org"]
     ignore_parent_replication_key = False
     use_fake_since_parameter = True
+
+    def get_url_params(
+        self, context: dict | None, next_page_token: Any | None
+    ) -> dict[str, Any]:
+        """Return a dictionary of values to be used in URL parameterization."""
+        params = super().get_url_params(context, next_page_token)
+        self.logger.info(f"URL Params: {params}")
+        self.logger.info(f"Context: {context}")
+        self.logger.info(f"State: {self.get_starting_replication_key_value(context)}")
+        return params
+
     '''
     def get_next_page_token(
         self, response: requests.Response, previous_token: Any | None
