@@ -1557,9 +1557,8 @@ class ContributorsStream(GitHubRestStream):
 
     def validate_response(self, response: requests.Response) -> None:
         """Allow some specific errors."""
-        if response.status_code == 403:
-            contents = response.json()
-            if (
+        contents = response.json()
+        if (
                 contents["message"]
                 == "The history or contributor list is too large to list contributors for this repository via the API."  # noqa: E501
             ):
@@ -2115,6 +2114,17 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
     ignore_parent_replication_key = False
     use_fake_since_parameter = True
 
+    def get_url_params(
+        self, context: dict | None, next_page_token: Any | None
+    ) -> dict[str, Any]:
+        """Return a dictionary of values to be used in URL parameterization."""
+        params = super().get_url_params(context, next_page_token)
+        self.logger.info(f"URL Params: {params}")
+        self.logger.info(f"Context: {context}")
+        self.logger.info(f"State: {self.get_starting_replication_key_value(context)}")
+        return params
+
+    '''    
     def get_next_page_token(
         self, response: requests.Response, previous_token: Any | None
     ) -> Any | None:
@@ -2157,6 +2167,7 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
             f"{previous_token} and response {response.json}"
         )
         return super().get_next_page_token(response, previous_token)
+    '''
 
     @property
     def query(self) -> str:
@@ -2202,9 +2213,20 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
                 }
                 }
             }
+            rateLimit {
+              cost
+                }
             }
             """ # noqa: E501
     
+    discussion_object = th.ObjectType(
+        th.Property("id", th.IntegerType),
+        th.Property("node_id", th.StringType),
+        th.Property("number", th.IntegerType),
+        th.Property("title", th.StringType),
+        th.Property("discussion_url", th.StringType),
+    )
+
     schema = th.PropertiesList(
         # Parent Keys
         th.Property("repo", th.StringType),
@@ -2212,13 +2234,10 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
         th.Property("repo_id", th.IntegerType),
         # Discussion Info 
         th.Property("node_id", th.StringType),
-        th.Property("id", th.IntegerType),
-        th.Property("number", th.IntegerType),
-        th.Property("title", th.StringType),
-        th.Property("discussion_url", th.StringType),
+        th.Property("discussion", discussion_object),
         th.Property("created_at", th.DateTimeType), # DateTime when the discussion was pinned
         th.Property("updated_at", th.DateTimeType),
-        th.Property("pinnedBy", user_object),
+        th.Property("pinned_by", user_object),
         th.Property("preconfigured_gradient", th.StringType),
         th.Property("pattern", th.StringType),
         th.Property("gradient_stop_colors", th.StringType),
