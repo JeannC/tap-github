@@ -2124,7 +2124,7 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
         self.logger.info(f"State: {self.get_starting_replication_key_value(context)}")
         return params
 
-    '''    
+    '''
     def get_next_page_token(
         self, response: requests.Response, previous_token: Any | None
     ) -> Any | None:
@@ -2183,42 +2183,40 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
                     startCursor_0: startCursor
                     endCursor_0: endCursor
                 }
-                edges {
-                    node {
+                nodes {
                     node_id: id
                     discussion {
-                        node_id: id
-                        id: databaseId
-                        number
-                        title
-                        discussion_url: url
+                    node_id: id
+                    id: databaseId
+                    number
+                    title
+                    discussion_url: url
                     }
                     pinnedBy {
-                        ... on User {
-                          node_id: id
-                          id: databaseId
-                          login
-                         avatar_url: avatarUrl
-                          html_url: url
-                          type: __typename
-                          site_admin: isSiteAdmin
-                        }
+                    ... on User {
+                        node_id: id
+                        id: databaseId
+                        login
+                        avatar_url: avatarUrl
+                        html_url: url
+                        type: __typename
+                        site_admin: isSiteAdmin
+                    }
                     }
                     gradient_stop_colors: gradientStopColors
                     pattern
                     preconfigured_gradient: preconfiguredGradient
                     created_at: createdAt
                     updated_at: updatedAt
-                    }
                 }
                 }
             }
             rateLimit {
-              cost
-                }
+                cost
+            }
             }
             """ # noqa: E501
-    
+
     discussion_object = th.ObjectType(
         th.Property("id", th.IntegerType),
         th.Property("node_id", th.StringType),
@@ -2232,7 +2230,7 @@ class PinnedDiscussionStream(GitHubGraphqlStream):
         th.Property("repo", th.StringType),
         th.Property("org", th.StringType),
         th.Property("repo_id", th.IntegerType),
-        # Discussion Info 
+        # Discussion Info
         th.Property("node_id", th.StringType),
         th.Property("discussion", discussion_object),
         th.Property("created_at", th.DateTimeType), # DateTime when the discussion was pinned
