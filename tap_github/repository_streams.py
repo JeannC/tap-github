@@ -1784,51 +1784,6 @@ class DiscussionsStream(GitHubGraphqlStream):
         self.logger.info(f"State: {self.get_starting_replication_key_value(context)}")
         return params
 
-    '''
-    def get_next_page_token(
-        self, response: requests.Response, previous_token: Any | None
-    ) -> Any | None:
-        """
-        Exit early if a since parameter is provided.
-        """
-        request_parameters = parse_qs(str(urlparse(response.request.url).query))
-        self.logger.info(f"request_parameters: {request_parameters}")
-
-        # parse_qs interprets "+" as a space, revert this to keep an aware datetime
-        try:
-            since = (
-                request_parameters["since"][0].replace(" ", "+")
-                if "since" in request_parameters
-                else ""
-            )
-        except IndexError:
-            since = ""
-
-        self.logger.info(f"since: {since}")
-        # If since parameter is present, try to exit early by looking at the last "updated_at".  # noqa: E501
-        # Noting that we are traversing in DESCENDING order by STARRED_AT.
-        if since:
-            results = list(extract_jsonpath(self.query_jsonpath, input=response.json()))
-            self.logger.info(f"results: {results}")
-
-            # If no results, return None to exit early.
-            if len(results) == 0:
-                self.logger.info("CASE 1: empty results")
-                return None
-            last = results[-1]
-            if parse(last["updated_at"]) < parse(since):
-                self.logger.info(
-                    f"CASE 2: last updated at {last['updated_at']} "
-                    f"is less than since {since}"
-                )
-                return None
-        self.logger.info(
-            f"CASE 3: moving on to super().get_next_page_token with previous_token "
-            f"{previous_token} and response {response.json}"
-        )
-        return super().get_next_page_token(response, previous_token)
-    '''
-
     @property
     def query(self) -> str:
         """Return dynamic GraphQL query."""
@@ -2026,49 +1981,15 @@ class DiscussionCategoriesStream(GitHubGraphqlStream):
     ignore_parent_replication_key = False
     use_fake_since_parameter = True
 
-# Stargazer navigation functions # noqa: E501
-    def get_next_page_token(
-        self, response: requests.Response, previous_token: Any | None
-    ) -> Any | None:
-        """
-        Exit early if a since parameter is provided.
-        """
-        request_parameters = parse_qs(str(urlparse(response.request.url).query))
-        self.logger.info(f"request_parameters: {request_parameters}")
-
-        # parse_qs interprets "+" as a space, revert this to keep an aware datetime
-        try:
-            since = (
-                request_parameters["since"][0].replace(" ", "+")
-                if "since" in request_parameters
-                else ""
-            )
-        except IndexError:
-            since = ""
-
-        self.logger.info(f"since: {since}")
-        # If since parameter is present, try to exit early by looking at the last "updated_at".  # noqa: E501
-        # Noting that we are traversing in DESCENDING order by STARRED_AT.
-        if since:
-            results = list(extract_jsonpath(self.query_jsonpath, input=response.json()))
-            self.logger.info(f"results: {results}")
-
-            # If no results, return None to exit early.
-            if len(results) == 0:
-                self.logger.info("CASE 1: empty results")
-                return None
-            last = results[-1]
-            if parse(last["updated_at"]) < parse(since):
-                self.logger.info(
-                    f"CASE 2: last updated at {last['updated_at']} "
-                    f"is less than since {since}"
-                )
-                return None
-        self.logger.info(
-            f"CASE 3: moving on to super().get_next_page_token with previous_token "
-            f"{previous_token} and response {response.json}"
-        )
-        return super().get_next_page_token(response, previous_token)
+    def get_url_params(
+        self, context: dict | None, next_page_token: Any | None
+    ) -> dict[str, Any]:
+        """Return a dictionary of values to be used in URL parameterization."""
+        params = super().get_url_params(context, next_page_token)
+        self.logger.info(f"URL Params: {params}")
+        self.logger.info(f"Context: {context}")
+        self.logger.info(f"State: {self.get_starting_replication_key_value(context)}")
+        return params
 
     @property
     def query(self) -> str:
@@ -2115,6 +2036,7 @@ class DiscussionCategoriesStream(GitHubGraphqlStream):
         th.Property("updated_at", th.DateTimeType),
     ).to_dict()
 
+
 class DiscussionsCommentsStream(GitHubGraphqlStream):
     """Defines stream fetching discussion comments from each repository."""
 
@@ -2127,55 +2049,22 @@ class DiscussionsCommentsStream(GitHubGraphqlStream):
     ignore_parent_replication_key = False
     use_fake_since_parameter = True
 
-    def get_next_page_token(
-        self, response: requests.Response, previous_token: Any | None
-    ) -> Any | None:
-        """
-        Exit early if a since parameter is provided.
-        """
-        request_parameters = parse_qs(str(urlparse(response.request.url).query))
-        self.logger.info(f"request_parameters: {request_parameters}")
-
-        # parse_qs interprets "+" as a space, revert this to keep an aware datetime
-        try:
-            since = (
-                request_parameters["since"][0].replace(" ", "+")
-                if "since" in request_parameters
-                else ""
-            )
-        except IndexError:
-            since = ""
-
-        self.logger.info(f"since: {since}")
-        # If since parameter is present, try to exit early by looking at the last "updated_at".  # noqa: E501
-        # Noting that we are traversing in DESCENDING order by STARRED_AT.
-        if since:
-            results = list(extract_jsonpath(self.query_jsonpath, input=response.json()))
-            self.logger.info(f"results: {results}")
-
-            # If no results, return None to exit early.
-            if len(results) == 0:
-                self.logger.info("CASE 1: empty results")
-                return None
-            last = results[-1]
-            if parse(last["updated_at"]) < parse(since):
-                self.logger.info(
-                    f"CASE 2: last updated at {last['updated_at']} "
-                    f"is less than since {since}"
-                )
-                return None
-        self.logger.info(
-            f"CASE 3: moving on to super().get_next_page_token with previous_token "
-            f"{previous_token} and response {response.json}"
-        )
-        return super().get_next_page_token(response, previous_token)
+    def get_url_params(
+        self, context: dict | None, next_page_token: Any | None
+    ) -> dict[str, Any]:
+        """Return a dictionary of values to be used in URL parameterization."""
+        params = super().get_url_params(context, next_page_token)
+        self.logger.info(f"URL Params: {params}")
+        self.logger.info(f"Context: {context}")
+        self.logger.info(f"State: {self.get_starting_replication_key_value(context)}")
+        return params
 
     @property
     def query(self) -> str:
         """Return dynamic GraphQL query."""
         # Graphql id is equivalent to REST node_id. To keep the tap consistent, we rename "id" to "node_id" and "databaseId" to "id".  # noqa: E501
         return """
-        query DiscussionsComments($repo: String!, $org: String!, $nextPageCursor_0: String) {
+        query DiscussionsComments($repo: String!, $org: String!, $nextPageCursor_0: String, $nextPageCursor_1: String) {
         repository(name: $repo, owner: $org) {
             discussions(first: 10, orderBy: {field: UPDATED_AT, direction: DESC}, after: $nextPageCursor_0) {
             pageInfo {
@@ -2184,11 +2073,11 @@ class DiscussionsCommentsStream(GitHubGraphqlStream):
                 endCursor_0: endCursor
             }
             nodes {
-                comments(first: 10) {
+                comments(first: 100, after: $nextPageCursor_1) {
                 pageInfo {
-                    hasNextPage_0: hasNextPage
-                    startCursor_0: startCursor
-                    endCursor_0: endCursor
+                    hasNextPage_1: hasNextPage
+                    startCursor_1: startCursor
+                    endCursor_1: endCursor
                 }
                 nodes {
                     node_id:id
@@ -2314,8 +2203,6 @@ class DiscussionsCommentsStream(GitHubGraphqlStream):
         th.Property("replies", replies_array),
         th.Property("reactions", reactions_array),
     ).to_dict()
-
-
 
 
 class StatsContributorsStream(GitHubRestStream):
